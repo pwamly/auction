@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotline Auctions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Expanded:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F4EC; --paper-2:#ECE7D6; --ink:#182B1D; --ink-soft:#51624F;
+    --rust:#1E7A37; --rust-dark:#145C29; --moss:#0B6FA4; --alert:#B3261E;
+    --gold:#C99A1E; --line:#D6D0B9; --card:#FFFFFF;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12180F; --paper-2:#1A2216; --ink:#E9EDE4; --ink-soft:#A9B6A3;
+      --rust:#3FAE5C; --rust-dark:#2E8C46; --moss:#3F9FD6; --alert:#E2554A;
+      --gold:#E0B84A; --line:#2C3A28; --card:#1A2216;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12180F; --paper-2:#1A2216; --ink:#E9EDE4; --ink-soft:#A9B6A3;
+    --rust:#3FAE5C; --rust-dark:#2E8C46; --moss:#3F9FD6; --alert:#E2554A;
+    --gold:#E0B84A; --line:#2C3A28; --card:#1A2216;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--paper); color:var(--ink); font-family:'Archivo', sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .tabular{ font-variant-numeric: tabular-nums; }
+  a{color:var(--rust);}
+  .hidden{ display:none !important; }
+
+  header{ border-bottom:3px solid var(--gold); padding:28px 24px 22px; }
+  .header-inner{ max-width:920px; margin:0 auto; display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; }
+  .wordmark{ font-family:'Archivo Expanded', sans-serif; font-weight:800; font-size:26px; letter-spacing:-0.01em; margin:0; }
+  .wordmark span{color:var(--rust);}
+  .tagline{ margin:4px 0 0; color:var(--ink-soft); font-size:14px; max-width:44ch; }
+  .session-box{ text-align:right; font-size:13px; color:var(--ink-soft); }
+  .session-box .who{ font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+  .session-box .role-tag{
+    display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.04em; padding:2px 7px; border-radius:3px; margin-left:6px;
+    background:rgba(30,122,55,0.12); color:var(--rust-dark); vertical-align:middle;
+  }
+  .logout-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-soft); font-family:inherit;
+    font-size:12.5px; font-weight:600; cursor:pointer; padding:6px 12px; border-radius:3px;
+  }
+  .logout-btn:hover{ color:var(--alert); border-color:var(--alert); }
+
+  main{ max-width:920px; margin:0 auto; padding:32px 24px 80px; }
+
+  /* ---------- Auth screen ---------- */
+  .auth-wrap{ max-width:420px; margin:40px auto; }
+  .auth-card{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:32px; }
+  .auth-tabs{ display:flex; gap:0; margin-bottom:24px; border-bottom:1px solid var(--line); }
+  .auth-tab{
+    flex:1; text-align:center; padding:10px 0; font-size:13.5px; font-weight:700; cursor:pointer;
+    color:var(--ink-soft); border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .auth-tab.active{ color:var(--rust); border-bottom-color:var(--rust); }
+  .auth-field{ margin-bottom:14px; }
+  .auth-field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+  .auth-field input, .auth-field select{
+    font-family:inherit; font-size:14px; padding:10px 11px; border:1px solid var(--line);
+    border-radius:3px; background:var(--paper); color:var(--ink); width:100%;
+  }
+  .auth-submit{
+    width:100%; background:var(--rust); color:#fff; border:none; font-weight:700; font-size:14px;
+    padding:11px 0; border-radius:3px; cursor:pointer; font-family:inherit; margin-top:6px;
+  }
+  .auth-submit:hover{ background:var(--rust-dark); }
+  .auth-error{ font-size:12.5px; color:var(--alert); margin-top:10px; min-height:14px; }
+  .auth-hint{ font-size:12px; color:var(--ink-soft); margin-top:16px; line-height:1.5; border-top:1px dashed var(--line); padding-top:14px; }
+  .auth-hint b{ color:var(--ink); }
+
+  /* ---------- Lots list (bidder + admin shared) ---------- */
+  .lots-header{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:4px; }
+  .lots-header h2{ font-size:15px; text-transform:uppercase; letter-spacing:0.04em; margin:0; font-weight:700; }
+  .new-lot-btn{ background:none; border:none; color:var(--rust); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; padding:4px 0; }
+  .new-lot-btn:hover{ text-decoration:underline; }
+
+  .lot{ border-bottom:1px solid var(--line); padding:26px 0; display:grid; grid-template-columns:64px 1fr 220px; gap:20px; }
+  @media (max-width:680px){ .lot{ grid-template-columns:1fr; gap:10px; } .lot-num{ font-size:13px; } }
+  .lot-num{ font-weight:700; color:var(--ink-soft); font-size:13px; letter-spacing:0.02em; padding-top:3px; }
+  .lot-main h3{ margin:0 0 4px; font-size:19px; font-weight:700; }
+  .lot-desc{ margin:0 0 12px; color:var(--ink-soft); font-size:14px; line-height:1.5; max-width:52ch; }
+  .lot-meta{ display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--ink-soft); margin-bottom:14px; }
+  .lot-meta b{ color:var(--ink); font-weight:600; }
+
+  .bid-history{ margin-top:10px; }
+  .bid-history summary{ cursor:pointer; font-size:12.5px; color:var(--moss); font-weight:600; }
+  .bid-history ul{ list-style:none; margin:8px 0 0; padding:0; font-size:13px; }
+  .bid-history li{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed var(--line); color:var(--ink-soft); }
+  .bid-history li b{ color:var(--ink); }
+
+  .lot-side{ text-align:left; }
+  .status-pill{ display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border-radius:3px; margin-bottom:10px; }
+  .status-live{ background:rgba(30,122,55,0.12); color:var(--rust-dark); }
+  .status-ending{ background:rgba(179,38,30,0.15); color:var(--alert); }
+  .status-closed{ background:rgba(11,111,164,0.15); color:var(--moss); }
+
+  .current-bid-label{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:2px; }
+  .current-bid{ font-size:26px; font-weight:800; margin-bottom:2px; }
+  .current-bidder{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .countdown{ font-size:13px; color:var(--ink-soft); margin-bottom:14px; }
+  .countdown .time{ font-weight:700; color:var(--ink); }
+  .countdown.urgent .time{ color:var(--alert); }
+
+  .bid-form{ display:flex; gap:6px; }
+  .bid-form input{ font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:3px; background:var(--card); color:var(--ink); width:100%; min-width:0; }
+  .bid-form button{ font-family:inherit; font-weight:700; font-size:13px; background:var(--rust); color:#fff; border:none; border-radius:3px; padding:9px 14px; cursor:pointer; white-space:nowrap; }
+  .bid-form button:hover{ background:var(--rust-dark); }
+  .bid-form button:disabled{ background:var(--line); cursor:not-allowed; }
+  .bid-error{ font-size:12px; color:var(--alert); margin-top:6px; min-height:14px; }
+
+  .won-banner{ background:rgba(11,111,164,0.12); border:1px solid var(--moss); border-radius:3px; padding:10px 12px; font-size:13.5px; }
+  .won-banner b{ display:block; margin-bottom:2px; }
+
+  .admin-actions{ margin-top:10px; }
+  .delete-lot-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-soft); font-family:inherit;
+    font-size:11.5px; font-weight:600; cursor:pointer; padding:5px 9px; border-radius:3px;
+  }
+  .delete-lot-btn:hover{ color:var(--alert); border-color:var(--alert); }
+
+  /* ---------- New lot form ---------- */
+  .new-lot-form{ background:var(--card); border:1px solid var(--line); border-radius:4px; padding:20px; margin:20px 0 32px; display:none; }
+  .new-lot-form.open{ display:block; }
+  .new-lot-form h3{ margin:0 0 14px; font-size:15px; }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-grid .full{ grid-column:1 / -1; }
+  .form-grid label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+  .form-grid input, .form-grid select{ font-family:inherit; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:3px; background:var(--paper); color:var(--ink); width:100%; }
+  .form-actions{ margin-top:16px; display:flex; gap:10px; }
+  .btn-primary{ background:var(--rust); color:#fff; border:none; font-weight:700; font-size:13px; padding:9px 16px; border-radius:3px; cursor:pointer; font-family:inherit; }
+  .btn-primary:hover{ background:var(--rust-dark); }
+  .btn-secondary{ background:none; border:1px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:13px; padding:9px 16px; border-radius:3px; cursor:pointer; font-family:inherit; }
+
+  .empty-state{ padding:40px 0; text-align:center; color:var(--ink-soft); font-size:14px; }
+
+  .sync-banner{
+    font-size:12.5px; background:rgba(179,38,30,0.1); color:var(--alert); border:1px solid var(--alert);
+    border-radius:4px; padding:9px 12px; margin-bottom:20px;
+  }
+
+  footer{ text-align:center; color:var(--ink-soft); font-size:12px; padding:30px 24px 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <p class="wordmark">Lot<span>line</span></p>
+      <p class="tagline" id="tagline">Sealed-ledger bidding on raw materials and commodity lots.</p>
+    </div>
+    <div class="session-box hidden" id="sessionBox">
+      <div class="who" id="sessionWho"></div>
+      <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ MODULE 1: AUTH ============ -->
+  <div id="screen-auth">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="tabLogin" data-tab="login">Log in</div>
+          <div class="auth-tab" id="tabSignup" data-tab="signup">Sign up</div>
+        </div>
+
+        <div id="loginForm">
+          <div class="auth-field">
+            <label for="loginUsername">Username</label>
+            <input type="text" id="loginUsername" autocomplete="username">
+          </div>
+          <div class="auth-field">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" autocomplete="current-password">
+          </div>
+          <button class="auth-submit" id="loginSubmit" type="button">Log in</button>
+          <div class="auth-error" id="loginError"></div>
+        </div>
+
+        <div id="signupForm" class="hidden">
+          <div class="auth-field">
+            <label for="signupUsername">Choose a username</label>
+            <input type="text" id="signupUsername" autocomplete="username" placeholder="letters, numbers, underscore">
+          </div>
+          <div class="auth-field">
+            <label for="signupPassword">Choose a password</label>
+            <input type="password" id="signupPassword" autocomplete="new-password">
+          </div>
+          <div class="auth-field">
+            <label for="signupConfirm">Confirm password</label>
+            <input type="password" id="signupConfirm" autocomplete="new-password">
+          </div>
+          <button class="auth-submit" id="signupSubmit" type="button">Create bidder account</button>
+          <div class="auth-error" id="signupError"></div>
+        </div>
+
+        <div class="auth-hint">
+          New bidders sign up here and go straight to the auction floor. Admin accounts aren't self-registered — use <b>admin</b> / <b>admin123</b> for the demo admin login, which can list and manage lots.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODULE 2: BIDDER (AUCTION) PAGE ============ -->
+  <div id="screen-bidder" class="hidden">
+    <div id="bidderSyncBanner" class="sync-banner hidden">Live sync isn't available in this view, so lots and bids are only visible in this browser tab.</div>
+    <div class="lots-header">
+      <h2>Open lots</h2>
+    </div>
+    <div id="bidderLotsContainer"></div>
+  </div>
+
+  <!-- ============ MODULE 3: ADMIN PAGE ============ -->
+  <div id="screen-admin" class="hidden">
+    <div id="adminSyncBanner" class="sync-banner hidden">Live sync isn't available in this view, so lots added here are only visible in this browser tab.</div>
+    <div class="lots-header">
+      <h2>Manage lots</h2>
+      <button class="new-lot-btn" id="toggleNewLot" type="button">+ List a new lot</button>
+    </div>
+
+    <div class="new-lot-form" id="newLotForm">
+      <h3>List a new lot</h3>
+      <div class="form-grid">
+        <div class="full">
+          <label for="nlName">Product name</label>
+          <input type="text" id="nlName" placeholder="e.g. Recycled Rubber Granules, 20t">
+        </div>
+        <div class="full">
+          <label for="nlDesc">Description</label>
+          <input type="text" id="nlDesc" placeholder="Short description of the lot">
+        </div>
+        <div>
+          <label for="nlStart">Starting price ($)</label>
+          <input type="number" id="nlStart" min="0" step="1" value="100">
+        </div>
+        <div>
+          <label for="nlIncrement">Minimum increment ($)</label>
+          <input type="number" id="nlIncrement" min="1" step="1" value="5">
+        </div>
+        <div>
+          <label for="nlDuration">Auction length</label>
+          <select id="nlDuration">
+            <option value="60">1 minute (demo)</option>
+            <option value="120" selected>2 minutes (demo)</option>
+            <option value="300">5 minutes (demo)</option>
+            <option value="600">10 minutes (demo)</option>
+            <option value="3600">1 hour</option>
+            <option value="86400">1 day</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="submitNewLot" type="button">List lot</button>
+        <button class="btn-secondary" id="cancelNewLot" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div id="adminLotsContainer"></div>
+  </div>
+
+</main>
+
+<footer>
+  Demo auction house. Passwords are stored in plain text for this prototype — don't reuse a real password.
+</footer>
+
+<script>
+(function(){
+
+  // ================= Local fallback "DB" (used only if the db capability is unavailable) =================
+  function makeLocalDB(){
+    var store = {};       // path -> data object
+    var docListeners = {};   // path -> [cb]
+    var colListeners = {};   // collectionPath -> [cb]
+
+    function parentCollection(path){
+      var parts = path.split('/');
+      parts.pop();
+      return parts.join('/');
+    }
+    function notifyDoc(path){
+      var data = store[path];
+      (docListeners[path]||[]).forEach(function(cb){
+        cb({ id: path.split('/').pop(), exists: !!data, data: function(){ return data ? JSON.parse(JSON.stringify(data)) : undefined; } });
+      });
+      var colPath = parentCollection(path);
+      (colListeners[colPath]||[]).forEach(function(cb){ cb(snapshotForCollection(colPath)); });
+    }
+    function snapshotForCollection(colPath){
+      var docs = [];
+      Object.keys(store).forEach(function(p){
+        if(parentCollection(p) === colPath){
+          var data = store[p];
+          docs.push({ id: p.split('/').pop(), exists:true, data: function(){ return JSON.parse(JSON.stringify(data)); } });
+        }
+      });
+      return { docs: docs, size: docs.length, empty: docs.length===0, docChanges: function(){ return []; } };
+    }
+    function makeDocRef(path){
+      return {
+        id: path.split('/').pop(),
+        path: path,
+        get: function(){
+          var data = store[path];
+          return Promise.resolve({ id: path.split('/').pop(), exists: !!data, data: function(){ return data ? JSON.parse(JSON.stringify(data)) : undefined; } });
+        },
+        set: function(data){ store[path] = JSON.parse(JSON.stringify(data)); notifyDoc(path); return Promise.resolve(); },
+        update: function(data){
+          if(!store[path]) return Promise.reject({code:'invalid_argument', message:'doc does not exist'});
+          store[path] = Object.assign({}, store[path], JSON.parse(JSON.stringify(data)));
+          notifyDoc(path);
+          return Promise.resolve();
+        },
+        delete: function(){ delete store[path]; notifyDoc(path); return Promise.resolve(); },
+        onSnapshot: function(cb){
+          docListeners[path] = docListeners[path]||[];
+          docListeners[path].push(cb);
+          var data = store[path];
+          cb({ id: path.split('/').pop(), exists: !!data, data: function(){ return data ? JSON.parse(JSON.stringify(data)) : undefined; } });
+          return function(){
+            docListeners[path] = (docListeners[path]||[]).filter(function(f){ return f!==cb; });
+          };
+        },
+        collection: function(sub){ return makeCollRef(path + '/' + sub); }
+      };
+    }
+    function makeCollRef(path){
+      return {
+        path: path,
+        doc: function(id){ return makeDocRef(path + '/' + (id || ('local' + Math.random().toString(36).slice(2)))); },
+        add: function(data){
+          var id = 'local' + Date.now() + Math.random().toString(36).slice(2,7);
+          var ref = makeDocRef(path + '/' + id);
+          return ref.set(data).then(function(){ return ref; });
+        },
+        get: function(){ return Promise.resolve(snapshotForCollection(path)); },
+        onSnapshot: function(cb){
+          colListeners[path] = colListeners[path]||[];
+          colListeners[path].push(cb);
+          cb(snapshotForCollection(path));
+          return function(){
+            colListeners[path] = (colListeners[path]||[]).filter(function(f){ return f!==cb; });
+          };
+        },
+        where: function(){ return this; },
+        orderBy: function(){ return this; },
+        limit: function(){ return this; }
+      };
+    }
+    return { doc: makeDocRef, collection: makeCollRef };
+  }
+
+  var db = null;
+  var usingLocalFallback = false;
+
+  function initDb(){
+    if(window.claude && typeof window.claude.use === 'function'){
+      return window.claude.use('db').then(function(resolved){
+        if(resolved){ db = resolved; usingLocalFallback = false; }
+        else { db = makeLocalDB(); usingLocalFallback = true; }
+        onDbReady();
+      }).catch(function(){
+        db = makeLocalDB(); usingLocalFallback = true;
+        onDbReady();
+      });
+    } else {
+      db = makeLocalDB(); usingLocalFallback = true;
+      return Promise.resolve().then(onDbReady);
+    }
+  }
+
+  // ================= App state =================
+  var SESSION_KEY = 'lotline_session_v1';
+  var session = null; // { username, role }
+
+  function loadSession(){
+    try{
+      var raw = localStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveSession(s){
+    try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){}
+  }
+  function clearSession(){
+    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+
+  function sanitizeUsername(u){
+    return (u||'').trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'');
+  }
+
+  function fmtMoney(n){ return '$' + Number(n).toLocaleString(undefined, {maximumFractionDigits:2}); }
+  function escapeHtml(str){ var d=document.createElement('div'); d.textContent = str==null?'':String(str); return d.innerHTML; }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function fmtDuration(ms){
+    if(ms<=0) return '00:00:00';
+    var totalSec = Math.floor(ms/1000);
+    var h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+    if(h>0) return pad(h)+':'+pad(m)+':'+pad(s);
+    return pad(m)+':'+pad(s);
+  }
+
+  // ================= Screen routing =================
+  function showScreen(name){
+    ['auth','bidder','admin'].forEach(function(n){
+      document.getElementById('screen-'+n).classList.toggle('hidden', n!==name);
+    });
+    var sessionBox = document.getElementById('sessionBox');
+    if(name === 'auth'){
+      sessionBox.classList.add('hidden');
+      document.getElementById('tagline').textContent = 'Sealed-ledger bidding on raw materials and commodity lots. Log in or sign up to continue.';
+    } else {
+      sessionBox.classList.remove('hidden');
+      var roleLabel = session.role === 'admin' ? 'Admin' : 'Bidder';
+      document.getElementById('sessionWho').innerHTML = escapeHtml(session.username) + '<span class="role-tag">'+roleLabel+'</span>';
+      document.getElementById('tagline').textContent = name === 'admin'
+        ? 'List new lots and monitor bidding across the floor.'
+        : 'Highest bid standing when the clock runs out wins the lot.';
+    }
+  }
+
+  function routeToSession(){
+    if(!session){ showScreen('auth'); return; }
+    if(session.role === 'admin'){ showScreen('admin'); startAdminSubscription(); }
+    else { showScreen('bidder'); startBidderSubscription(); }
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    stopAllSubscriptions();
+    session = null;
+    clearSession();
+    routeToSession();
+  });
+
+  // ================= Auth: tabs =================
+  document.getElementById('tabLogin').addEventListener('click', function(){ setAuthTab('login'); });
+  document.getElementById('tabSignup').addEventListener('click', function(){ setAuthTab('signup'); });
+  function setAuthTab(tab){
+    document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+    document.getElementById('tabSignup').classList.toggle('active', tab==='signup');
+    document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
+    document.getElementById('signupForm').classList.toggle('hidden', tab!=='signup');
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('signupError').textContent = '';
+  }
+
+  // ================= Auth: login =================
+  document.getElementById('loginSubmit').addEventListener('click', function(){ doLogin(); });
+  document.getElementById('loginPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+  function doLogin(){
+    var errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    var uname = sanitizeUsername(document.getElementById('loginUsername').value);
+    var pass = document.getElementById('loginPassword').value;
+    if(!uname || !pass){ errEl.textContent = 'Enter both a username and password.'; return; }
+
+    db.doc('users/' + uname).get().then(function(snap){
+      if(!snap.exists){
+        errEl.textContent = 'No account found with that username.';
+        return;
+      }
+      var data = snap.data();
+      if(data.password !== pass){
+        errEl.textContent = 'Incorrect password.';
+        return;
+      }
+      session = { username: data.username, role: data.role };
+      saveSession(session);
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      routeToSession();
+    }).catch(function(){
+      errEl.textContent = 'Something went wrong reading accounts. Try again.';
+    });
+  }
+
+  // ================= Auth: signup (bidder only) =================
+  document.getElementById('signupSubmit').addEventListener('click', function(){ doSignup(); });
+
+  function doSignup(){
+    var errEl = document.getElementById('signupError');
+    errEl.textContent = '';
+    var rawUname = document.getElementById('signupUsername').value.trim();
+    var uname = sanitizeUsername(rawUname);
+    var pass = document.getElementById('signupPassword').value;
+    var confirm = document.getElementById('signupConfirm').value;
+
+    if(!uname || uname.length < 3){ errEl.textContent = 'Username must be at least 3 characters (letters, numbers, underscore).'; return; }
+    if(uname !== rawUname.toLowerCase()){ errEl.textContent = 'Username can only use letters, numbers, - and _.'; return; }
+    if(!pass || pass.length < 4){ errEl.textContent = 'Password must be at least 4 characters.'; return; }
+    if(pass !== confirm){ errEl.textContent = 'Passwords do not match.'; return; }
+    if(uname === 'admin'){ errEl.textContent = 'That username is reserved.'; return; }
+
+    db.doc('users/' + uname).get().then(function(snap){
+      if(snap.exists){ errEl.textContent = 'That username is already taken.'; return; }
+      return db.doc('users/' + uname).set({ username: uname, password: pass, role: 'bidder', createdAt: Date.now() }).then(function(){
+        session = { username: uname, role: 'bidder' };
+        saveSession(session);
+        document.getElementById('signupUsername').value = '';
+        document.getElementById('signupPassword').value = '';
+        document.getElementById('signupConfirm').value = '';
+        routeToSession();
+      });
+    }).catch(function(){
+      errEl.textContent = 'Something went wrong creating the account. Try again.';
+    });
+  }
+
+  // ================= Seeding =================
+  function ensureSeedData(){
+    db.doc('users/admin').get().then(function(snap){
+      if(!snap.exists){
+        db.doc('users/admin').set({ username: 'admin', password: 'admin123', role: 'admin', createdAt: Date.now() });
+      }
+    });
+    db.collection('lots').get().then(function(qs){
+      if(qs.empty){
+        var now = Date.now();
+        var seedLots = [
+          { name:'Natural Rubber Sheets, Grade RSS3', desc:'Ribbed smoked sheet rubber, 5-tonne pallet, export baled.', startingPrice:850, increment:25, endTime: now + 3*60*1000, bids:[], createdBy:'admin' },
+          { name:'Reclaimed Tire Rubber Granules', desc:'Crumb rubber, 2–4mm grade, 10-tonne lot, suitable for surfacing.', startingPrice:300, increment:10, endTime: now + 90*1000, bids:[], createdBy:'admin' },
+          { name:'Raw Latex Concentrate, 60% DRC', desc:'Field latex concentrate, ammonia-preserved, 1,000L drum.', startingPrice:500, increment:20, endTime: now + 5*60*1000, bids:[], createdBy:'admin' }
+        ];
+        seedLots.forEach(function(l){ db.collection('lots').add(l); });
+      }
+    });
+  }
+
+  // ================= Shared lot rendering =================
+  var lotsCache = []; // [{id, ...data}]
+
+  function currentBid(lot){ return lot.bids && lot.bids.length ? lot.bids[lot.bids.length-1].amount : lot.startingPrice; }
+  function minNextBid(lot){ return lot.bids && lot.bids.length ? currentBid(lot) + lot.increment : lot.startingPrice; }
+  function timeLeft(lot){ return lot.endTime - Date.now(); }
+
+  function sortedLots(){
+    return lotsCache.slice().sort(function(a,b){
+      var aClosed = timeLeft(a) <= 0, bClosed = timeLeft(b) <= 0;
+      if(aClosed !== bClosed) return aClosed ? 1 : -1;
+      return a.endTime - b.endTime;
+    });
+  }
+
+  function renderLotCard(lot, idx, mode){
+    var wrap = document.createElement('div');
+    wrap.className = 'lot';
+
+    var remaining = timeLeft(lot);
+    var closed = remaining <= 0;
+    var urgent = !closed && remaining < 30000;
+
+    var numEl = document.createElement('div');
+    numEl.className = 'lot-num tabular';
+    numEl.textContent = 'LOT ' + String(idx+1).padStart(3,'0');
+    wrap.appendChild(numEl);
+
+    var main = document.createElement('div');
+    main.className = 'lot-main';
+    var h3 = document.createElement('h3'); h3.textContent = lot.name; main.appendChild(h3);
+    var desc = document.createElement('p'); desc.className = 'lot-desc'; desc.textContent = lot.desc; main.appendChild(desc);
+
+    var meta = document.createElement('div');
+    meta.className = 'lot-meta';
+    meta.innerHTML =
+      '<span>Opening price: <b class="tabular">' + fmtMoney(lot.startingPrice) + '</b></span>' +
+      '<span>Min. increment: <b class="tabular">' + fmtMoney(lot.increment) + '</b></span>' +
+      '<span>Bids placed: <b>' + (lot.bids?lot.bids.length:0) + '</b></span>';
+    main.appendChild(meta);
+
+    if(lot.bids && lot.bids.length){
+      var details = document.createElement('details');
+      details.className = 'bid-history';
+      var summary = document.createElement('summary'); summary.textContent = 'Show bid history';
+      details.appendChild(summary);
+      var ul = document.createElement('ul');
+      lot.bids.slice().reverse().forEach(function(b){
+        var li = document.createElement('li');
+        var left = document.createElement('span'); left.innerHTML = '<b>' + escapeHtml(b.bidder) + '</b>';
+        var right = document.createElement('span'); right.className='tabular'; right.textContent = fmtMoney(b.amount);
+        li.appendChild(left); li.appendChild(right); ul.appendChild(li);
+      });
+      details.appendChild(ul);
+      main.appendChild(details);
+    }
+
+    if(mode === 'admin'){
+      var actions = document.createElement('div');
+      actions.className = 'admin-actions';
+      var delBtn = document.createElement('button');
+      delBtn.className = 'delete-lot-btn';
+      delBtn.type = 'button';
+      delBtn.textContent = 'Delete lot';
+      delBtn.addEventListener('click', function(){
+        if(confirm('Delete "' + lot.name + '"? This cannot be undone.')){
+          db.collection('lots').doc(lot.id).delete();
+        }
+      });
+      actions.appendChild(delBtn);
+      main.appendChild(actions);
+    }
+
+    wrap.appendChild(main);
+
+    var side = document.createElement('div');
+    side.className = 'lot-side';
+
+    var pill = document.createElement('span');
+    if(closed){ pill.className='status-pill status-closed'; pill.textContent='Closed'; }
+    else if(urgent){ pill.className='status-pill status-ending'; pill.textContent='Ending soon'; }
+    else { pill.className='status-pill status-live'; pill.textContent='Live'; }
+    side.appendChild(pill);
+
+    var bidLabel = document.createElement('div');
+    bidLabel.className = 'current-bid-label';
+    bidLabel.textContent = (lot.bids && lot.bids.length) ? 'Current bid' : 'Opening price';
+    side.appendChild(bidLabel);
+
+    var bidAmount = document.createElement('div');
+    bidAmount.className = 'current-bid tabular';
+    bidAmount.textContent = fmtMoney(currentBid(lot));
+    side.appendChild(bidAmount);
+
+    var bidderLine = document.createElement('div');
+    bidderLine.className = 'current-bidder';
+    bidderLine.textContent = (lot.bids && lot.bids.length)
+      ? (closed ? 'Won by ' : 'Leading: ') + lot.bids[lot.bids.length-1].bidder
+      : 'No bids yet';
+    side.appendChild(bidderLine);
+
+    if(closed){
+      var banner = document.createElement('div');
+      banner.className = 'won-banner';
+      if(lot.bids && lot.bids.length){
+        banner.innerHTML = '<b>Auction closed</b>' + escapeHtml(lot.bids[lot.bids.length-1].bidder) + ' wins this lot at ' + fmtMoney(currentBid(lot)) + '.';
+      } else {
+        banner.innerHTML = '<b>Auction closed</b>No bids were placed — lot unsold.';
+      }
+      side.appendChild(banner);
+    } else {
+      var countdown = document.createElement('div');
+      countdown.className = 'countdown' + (urgent?' urgent':'');
+      countdown.innerHTML = 'Closes in <span class="time tabular" data-countdown="'+lot.id+'">' + fmtDuration(remaining) + '</span>';
+      side.appendChild(countdown);
+
+      if(mode === 'bidder'){
+        var form = document.createElement('div'); form.className = 'bid-form';
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.placeholder = fmtMoney(minNextBid(lot)) + ' or more';
+        input.min = minNextBid(lot);
+        input.step = 1;
+        var btn = document.createElement('button'); btn.type='button'; btn.textContent='Place bid';
+        form.appendChild(input); form.appendChild(btn); side.appendChild(form);
+
+        var err = document.createElement('div'); err.className='bid-error'; side.appendChild(err);
+
+        btn.addEventListener('click', function(){ placeBid(lot, input, err); });
+        input.addEventListener('keydown', function(e){ if(e.key==='Enter') placeBid(lot, input, err); });
+      }
+    }
+
+    wrap.appendChild(side);
+    return wrap;
+  }
+
+  function renderLotsInto(containerId, mode){
+    var container = document.getElementById(containerId);
+    var list = sortedLots();
+    container.innerHTML = '';
+    if(list.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = mode === 'admin' ? 'No lots yet. List one to get started.' : 'No lots are open right now. Check back soon.';
+      container.appendChild(empty);
+      return;
+    }
+    list.forEach(function(lot, idx){ container.appendChild(renderLotCard(lot, idx, mode)); });
+  }
+
+  function placeBid(lot, input, errEl){
+    errEl.textContent = '';
+    if(timeLeft(lot) <= 0){ errEl.textContent = 'This lot has already closed.'; renderLotsInto('bidderLotsContainer','bidder'); return; }
+
+    var name = session.username;
+    var amount = parseFloat(input.value);
+    var minReq = minNextBid(lot);
+
+    if(isNaN(amount)){ errEl.textContent = 'Enter a bid amount.'; return; }
+    if(amount < minReq){ errEl.textContent = 'Bid must be at least ' + fmtMoney(minReq) + '.'; return; }
+    if(lot.bids.length && lot.bids[lot.bids.length-1].bidder.toLowerCase() === name.toLowerCase()){
+      errEl.textContent = 'You already hold the highest bid on this lot.'; return;
+    }
+
+    // Re-read the lot to reduce race conditions with other bidders, then write.
+    db.collection('lots').doc(lot.id).get().then(function(snap){
+      if(!snap.exists) return;
+      var fresh = snap.data();
+      var freshBids = fresh.bids || [];
+      var freshMin = freshBids.length ? (freshBids[freshBids.length-1].amount + fresh.increment) : fresh.startingPrice;
+      if(fresh.endTime <= Date.now()){ errEl.textContent = 'This lot just closed.'; return; }
+      if(amount < freshMin){ errEl.textContent = 'Someone just outbid you — minimum is now ' + fmtMoney(freshMin) + '.'; return; }
+      freshBids.push({ bidder: name, amount: amount, time: Date.now() });
+      return db.collection('lots').doc(lot.id).update({ bids: freshBids });
+    });
+  }
+
+  // ================= Subscriptions =================
+  var bidderUnsub = null, adminUnsub = null;
+  var tickInterval = null;
+
+  function applySnapshot(qs){
+    lotsCache = qs.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+  }
+
+  function startBidderSubscription(){
+    stopAllSubscriptions();
+    document.getElementById('bidderSyncBanner').classList.toggle('hidden', !usingLocalFallback);
+    bidderUnsub = db.collection('lots').onSnapshot(function(qs){
+      applySnapshot(qs);
+      renderLotsInto('bidderLotsContainer', 'bidder');
+    }, function(){ /* swallow errors, keep last known state */ });
+    startTicking();
+  }
+
+  function startAdminSubscription(){
+    stopAllSubscriptions();
+    document.getElementById('adminSyncBanner').classList.toggle('hidden', !usingLocalFallback);
+    adminUnsub = db.collection('lots').onSnapshot(function(qs){
+      applySnapshot(qs);
+      renderLotsInto('adminLotsContainer', 'admin');
+    }, function(){ /* swallow errors */ });
+    startTicking();
+  }
+
+  function stopAllSubscriptions(){
+    if(bidderUnsub){ bidderUnsub(); bidderUnsub = null; }
+    if(adminUnsub){ adminUnsub(); adminUnsub = null; }
+    if(tickInterval){ clearInterval(tickInterval); tickInterval = null; }
+  }
+
+  var lastClosedState = {};
+  function startTicking(){
+    if(tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(function(){
+      var needsFullRender = false;
+      lotsCache.forEach(function(lot){
+        var isClosed = timeLeft(lot) <= 0;
+        if(lastClosedState[lot.id] !== isClosed){ lastClosedState[lot.id] = isClosed; needsFullRender = true; }
+        if(!isClosed){
+          var el = document.querySelector('[data-countdown="'+lot.id+'"]');
+          if(el) el.textContent = fmtDuration(timeLeft(lot));
+        }
+      });
+      if(needsFullRender){
+        if(session && session.role === 'admin') renderLotsInto('adminLotsContainer','admin');
+        else if(session) renderLotsInto('bidderLotsContainer','bidder');
+      }
+    }, 1000);
+  }
+
+  // ================= Admin: new lot form =================
+  var newLotForm = document.getElementById('newLotForm');
+  document.getElementById('toggleNewLot').addEventListener('click', function(){ newLotForm.classList.toggle('open'); });
+  document.getElementById('cancelNewLot').addEventListener('click', function(){ newLotForm.classList.remove('open'); });
+  document.getElementById('submitNewLot').addEventListener('click', function(){
+    var name = document.getElementById('nlName').value.trim();
+    var desc = document.getElementById('nlDesc').value.trim();
+    var start = parseFloat(document.getElementById('nlStart').value);
+    var inc = parseFloat(document.getElementById('nlIncrement').value);
+    var dur = parseInt(document.getElementById('nlDuration').value, 10);
+
+    if(!name){ alert('Give the lot a product name.'); return; }
+    if(isNaN(start) || start < 0){ alert('Enter a valid starting price.'); return; }
+    if(isNaN(inc) || inc <= 0){ alert('Enter a valid minimum increment.'); return; }
+
+    db.collection('lots').add({
+      name: name,
+      desc: desc || 'No description provided.',
+      startingPrice: start,
+      increment: inc,
+      endTime: Date.now() + dur*1000,
+      bids: [],
+      createdBy: session.username
+    }).then(function(){
+      document.getElementById('nlName').value='';
+      document.getElementById('nlDesc').value='';
+      document.getElementById('nlStart').value='100';
+      document.getElementById('nlIncrement').value='5';
+      newLotForm.classList.remove('open');
+    });
+  });
+
+  // ================= Boot =================
+  function onDbReady(){
+    ensureSeedData();
+    session = loadSession();
+    routeToSession();
+  }
+
+  setAuthTab('login');
+  initDb();
+})();
+</script>
+
+</body>
+</html>

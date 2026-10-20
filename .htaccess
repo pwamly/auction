@@ -1,0 +1,5 @@
+# Only the page scripts are meant to be reached from the browser.
+<FilesMatch "^(config|bootstrap|setup|cron)\.php$|\.(sql|md|docx?|xlsx?|log|eml)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes
