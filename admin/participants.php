@@ -49,8 +49,9 @@ if ($id) {
     page_header(display_name($p), 'admin', 'participants');
     ?>
     <div class="page-head">
-      <div><div class="small muted"><a href="<?= h(url('admin/participants')) ?>">← Participants</a></div><h1><?= h(display_name($p)) ?></h1>
+      <div><div class="crumb"><a href="<?= h(url('admin/participants')) ?>">Participants</a><span>/</span><?= h(display_name($p)) ?></div><h1><?= h(display_name($p)) ?></h1>
         <p><?= h(ucfirst($p['participant_type'])) ?> · registered <?= h(fmt_dt($p['created_at'])) ?> · <span class="status-pill <?= $p['status'] === 'active' ? 'status-live' : 'status-alert' ?>"><?= h(ucfirst($p['status'])) ?></span></p></div>
+      <div class="head-actions"><button class="<?= $p['status'] === 'active' ? 'btn-danger-outline' : 'btn-primary' ?>" type="button" data-open="mStatus"><?= $p['status'] === 'active' ? 'Block participant' : 'Reactivate' ?></button></div>
     </div>
     <dl class="facts">
       <?php if ($p['participant_type'] === 'company'): ?>
@@ -69,14 +70,15 @@ if ($id) {
     </dl>
     <?php if ($p['status_reason']): ?><p class="small muted">Last status change: <?= h($p['status_reason']) ?></p><?php endif; ?>
 
-    <details class="action" style="max-width:520px">
-      <summary><?= $p['status'] === 'active' ? 'Block participant' : 'Reactivate participant' ?></summary>
+    <?= modal_start('mStatus', $p['status'] === 'active' ? 'Block participant' : 'Reactivate participant',
+        $p['status'] === 'active' ? 'They will not be able to log in or bid. They are told the reason by email.' : 'They can log in and bid again, and are notified.',
+        $p['status'] === 'active' ? 'danger' : '') ?>
       <form method="post"><?= csrf_field() ?>
         <input type="hidden" name="user_id" value="<?= (int) $p['user_id'] ?>"><input type="hidden" name="action" value="<?= $p['status'] === 'active' ? 'block' : 'unblock' ?>">
-        <div class="field"><label>Reason (recorded in the audit trail)</label><textarea name="reason" required minlength="5" style="min-height:70px"></textarea></div>
-        <button class="<?= $p['status'] === 'active' ? 'btn-danger' : 'btn-primary' ?>"><?= $p['status'] === 'active' ? 'Block' : 'Reactivate' ?></button>
+        <?= reason_field() ?>
+        <?= modal_actions($p['status'] === 'active' ? 'Block' : 'Reactivate', $p['status'] === 'active' ? 'btn-danger' : 'btn-primary') ?>
       </form>
-    </details>
+    <?= modal_end() ?>
 
     <div class="section"><h2>Auctions bid on</h2>
       <?php if (!$bids): ?><p class="muted">No bids.</p><?php else: ?>
@@ -122,14 +124,14 @@ $rows = array_slice($rows, 0, $limit);
 
 page_header('Participants', 'admin', 'participants');
 ?>
-<div class="page-head"><div><h1>Participants</h1><p>Registered individuals and companies.</p></div></div>
+<div class="page-head"><div><h1>Participants</h1><p>Registered individuals and companies. Open a participant to see their bids or block them.</p></div></div>
 <form class="filters" method="get">
   <div class="field"><label for="type">Type</label><select id="type" name="type"><option value="">All</option>
     <option value="individual" <?= $type === 'individual' ? 'selected' : '' ?>>Individuals</option><option value="company" <?= $type === 'company' ? 'selected' : '' ?>>Companies</option></select></div>
   <div class="field grow"><label for="q">Search</label><input id="q" type="search" name="q" value="<?= h($q) ?>" placeholder="Name, company, email, phone, NIDA or TIN"></div>
   <button class="btn-secondary">Filter</button>
 </form>
-<?php if (!$rows): ?><div class="empty-state">No participants found.</div><?php else: ?>
+<?php if (!$rows): ?><?= empty_state('No participants found.', 'users') ?><?php else: ?>
 <div class="table-wrap"><table class="data">
   <thead><tr><th>Name</th><th>Type</th><th>Email</th><th>Phone</th><th>Registered</th><th class="num">Bids</th><th>Status</th></tr></thead>
   <tbody><?php foreach ($rows as $r): ?>

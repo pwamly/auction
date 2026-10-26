@@ -6,28 +6,35 @@ const ROLE_LABELS = [
     'admin'           => 'Administrator',
     'auction_officer' => 'Auction Officer',
     'manager'         => 'Manager',
-    'investment'      => 'Investment Unit',
-    'ict'             => 'ICT',
-    'pr'              => 'PR',
 ];
 
-const STAFF_ROLES = ['admin', 'auction_officer', 'manager', 'investment', 'ict', 'pr'];
+const STAFF_ROLES = ['admin', 'auction_officer', 'manager'];
 
-/**
- * Who may do what on the administration side. Based on Requirements_doc.docx
- * Q2, Q3, Q19, Q28, Q33; Q34 (per-unit responsibilities) was left blank, so the
- * ICT / PR / Investment rows are a proposal to confirm with the client.
- */
-const PERMISSIONS = [
-    'auction.create'     => ['admin', 'auction_officer', 'manager'],       // Q2
-    'auction.approve'    => ['admin'],                                     // Q3
-    'auction.control'    => ['admin'],                                     // Q28 suspend / cancel / extend
-    'winner.approve'     => ['admin', 'manager', 'investment'],            // Q19
-    'payment.record'     => ['admin', 'investment'],
-    'participant.manage' => ['admin'],
-    'staff.manage'       => ['admin', 'ict'],
-    'reports.view'       => ['admin', 'auction_officer', 'manager', 'investment', 'ict', 'pr'], // Q27
-    'audit.view'         => ['admin', 'ict', 'manager'],
+/** Roles whose access the administrator configures (Staff accounts → Access privileges). */
+const CONFIGURABLE_ROLES = ['manager', 'auction_officer'];
+
+/** Every permission, with the label shown to the administrator. */
+const PERMISSION_LABELS = [
+    'auction.create'     => 'Create & edit auctions',
+    'auction.approve'    => 'Approve auctions (publish or return)',
+    'auction.extend'     => 'Extend closing time',
+    'auction.suspend'    => 'Suspend & resume bidding',
+    'auction.cancel'     => 'Cancel auctions',
+    'winner.approve'     => 'Confirm or reject winners',
+    'payment.record'     => 'Record payments (GePG control number & receipt)',
+    'payment.decide'     => 'Decide on overdue payments',
+    'participant.manage' => 'Block & reactivate participants',
+    'reports.view'       => 'View reports',
+    'audit.view'         => 'View history',
+];
+
+/** Only the administrator may manage staff accounts and access privileges; never assignable. */
+const ADMIN_ONLY_PERMISSIONS = ['staff.manage'];
+
+/** Starting privileges, applied by setup.php when the role_permissions table is empty. */
+const DEFAULT_ROLE_PERMISSIONS = [
+    'manager'         => ['auction.create', 'winner.approve', 'payment.record', 'payment.decide', 'reports.view', 'audit.view'],
+    'auction_officer' => ['auction.create', 'reports.view'],
 ];
 
 function is_staff(?array $user): bool
@@ -40,16 +47,44 @@ function is_participant(?array $user): bool
     return $user !== null && $user['role'] === 'participant';
 }
 
+/** role => [permission, ...] as granted by the administrator (cached per request). */
+function role_permissions(bool $refresh = false): array
+{
+    static $map = null;
+    if ($map === null || $refresh) {
+        $map = array_fill_keys(CONFIGURABLE_ROLES, []);
+        foreach (db_all('SELECT role, permission FROM role_permissions') as $row) {
+            $map[$row['role']][] = $row['permission'];
+        }
+    }
+    return $map;
+}
+
 function can(string $permission, ?array $user = null): bool
 {
     $user = $user ?? current_user();
-    return $user !== null && in_array($user['role'], PERMISSIONS[$permission] ?? [], true);
+    if ($user === null || !is_staff($user)) {
+        return false;
+    }
+    if ($user['role'] === 'admin') {
+        return true;
+    }
+    return !in_array($permission, ADMIN_ONLY_PERMISSIONS, true)
+        && in_array($permission, role_permissions()[$user['role']] ?? [], true);
 }
 
 /** Roles that hold a permission, e.g. to notify every winner approver. */
 function roles_with(string $permission): array
 {
-    return PERMISSIONS[$permission] ?? [];
+    $roles = ['admin'];
+    if (!in_array($permission, ADMIN_ONLY_PERMISSIONS, true)) {
+        foreach (role_permissions() as $role => $perms) {
+            if (in_array($permission, $perms, true)) {
+                $roles[] = $role;
+            }
+        }
+    }
+    return $roles;
 }
 
 /** The logged-in user, re-read from the database on every request so blocks and role changes apply at once. */
@@ -90,7 +125,7 @@ function require_login(): array
     if (!$user) {
         $_SESSION['after_login'] = $_SERVER['REQUEST_URI'] ?? null;
         flash('info', 'Please log in to continue.');
-        redirect('login');
+        redirect('?modal=mLogin');
     }
     if ($user['must_change_password'] && basename($_SERVER['SCRIPT_NAME']) !== 'change_password.php') {
         redirect('change_password');

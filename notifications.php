@@ -31,8 +31,9 @@ if ($items) {
   <?php endif; ?>
 </div>
 <?php if (!$items): ?>
-  <div class="empty-state">No notifications yet.</div>
+  <?= empty_state('No notifications yet. You will be notified here and by email about your bids and auctions.', 'bell') ?>
 <?php else: ?>
+  <div class="notif-list">
   <?php foreach ($items as $n): ?>
     <div class="notif-item <?= $n['read_at'] ? 'read' : 'unread' ?>">
       <span class="dot" aria-hidden="true"></span>
@@ -43,6 +44,7 @@ if ($items) {
       </div>
     </div>
   <?php endforeach; ?>
+  </div>
   <?= pager($page, $hasMore) ?>
 <?php endif; ?>
 <?php page_footer();

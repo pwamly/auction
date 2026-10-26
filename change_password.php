@@ -21,8 +21,22 @@ if (is_post()) {
         db_exec('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $user['id']]);
         audit('password_changed', $user['email'] . ' changed their password', 'user', $user['id']);
         flash('success', 'Your password has been changed.');
-        redirect(is_staff($user) ? 'admin/' : 'account');
+        if ($forced) {
+            redirect(is_staff($user) ? 'admin/' : '');
+        }
+        header('Location: ' . return_url(is_staff($user) ? 'admin/' : ''));
+        exit;
     }
+    // A normal change happens in the pop-up: go back to it with the error.
+    if (!$forced) {
+        stash_form('password', [], ['_form' => $error]);
+        back_to_modal('mPassword', is_staff($user) ? 'admin/' : '');
+    }
+}
+
+// Only a forced change (temporary password) gets its own page; otherwise use the pop-up.
+if (!$forced) {
+    redirect((is_staff($user) ? 'admin/' : '') . '?modal=mPassword');
 }
 
 page_header('Change password', is_staff($user) ? 'admin' : 'public');

@@ -89,84 +89,13 @@ if (is_post()) {
         flash('success', 'Your account is ready. You can now bid on open auctions.');
         $next = $_SESSION['after_login'] ?? null;
         unset($_SESSION['after_login']);
-        header('Location: ' . ($next && str_starts_with($next, APP_BASE . '/') ? $next : url('')));
+        header('Location: ' . ($next && str_starts_with($next, APP_BASE . '/') ? $next : return_url()));
         exit;
     }
+    // Back to the registration pop-up with the entries and errors.
+    stash_form('register', $v, $errors);
+    back_to_modal('mRegister');
 }
 
-$type = $v['participant_type'] ?? 'individual';
-page_header('Register', 'public');
-?>
-<div class="form-card" style="max-width:720px;margin:12px auto">
-  <h1>Register to bid</h1>
-  <p class="muted">Individuals and companies can take part. Your details are used to identify you if you win an auction.</p>
-  <form method="post" novalidate>
-    <?= csrf_field() ?>
-    <fieldset style="margin:16px 0">
-      <legend>I am registering as</legend>
-      <div class="radio-row">
-        <label class="checkbox"><input type="radio" name="participant_type" value="individual" <?= $type === 'individual' ? 'checked' : '' ?>> An individual</label>
-        <label class="checkbox"><input type="radio" name="participant_type" value="company" <?= $type === 'company' ? 'checked' : '' ?>> A company</label>
-      </div>
-      <?= field_error($errors, 'participant_type') ?>
-    </fieldset>
-
-    <div class="form-grid">
-      <div class="field full<?= isset($errors['company_name']) ? ' has-error' : '' ?>" data-show-if="participant_type:company">
-        <label for="company_name">Company name</label>
-        <input id="company_name" name="company_name" value="<?= old($v, 'company_name') ?>" maxlength="200">
-        <?= field_error($errors, 'company_name') ?>
-      </div>
-      <div class="field<?= isset($errors['brela_reg_no']) ? ' has-error' : '' ?>" data-show-if="participant_type:company">
-        <label for="brela_reg_no">BRELA registration number</label>
-        <input id="brela_reg_no" name="brela_reg_no" value="<?= old($v, 'brela_reg_no') ?>" maxlength="50">
-        <?= field_error($errors, 'brela_reg_no') ?>
-      </div>
-      <div class="field<?= isset($errors['tin']) ? ' has-error' : '' ?>">
-        <label for="tin">TIN <span data-show-if="participant_type:individual">(optional)</span></label>
-        <input id="tin" name="tin" value="<?= old($v, 'tin') ?>" inputmode="numeric" placeholder="123-456-789" maxlength="11">
-        <?= field_error($errors, 'tin') ?>
-      </div>
-      <div class="field full<?= isset($errors['full_name']) ? ' has-error' : '' ?>">
-        <label for="full_name"><span data-show-if="participant_type:company">Contact person — </span>Full name</label>
-        <input id="full_name" name="full_name" value="<?= old($v, 'full_name') ?>" maxlength="150" autocomplete="name">
-        <?= field_error($errors, 'full_name') ?>
-      </div>
-      <div class="field<?= isset($errors['nida_number']) ? ' has-error' : '' ?>" data-show-if="participant_type:individual">
-        <label for="nida_number">NIDA number</label>
-        <input id="nida_number" name="nida_number" value="<?= old($v, 'nida_number') ?>" inputmode="numeric" placeholder="20 digits" maxlength="23">
-        <?= field_error($errors, 'nida_number') ?>
-      </div>
-      <div class="field<?= isset($errors['phone']) ? ' has-error' : '' ?>">
-        <label for="phone">Phone number</label>
-        <input id="phone" name="phone" value="<?= old($v, 'phone') ?>" type="tel" autocomplete="tel" placeholder="0712 345 678">
-        <?= field_error($errors, 'phone') ?>
-      </div>
-      <div class="field<?= isset($errors['email']) ? ' has-error' : '' ?>">
-        <label for="email">Email</label>
-        <input id="email" name="email" value="<?= old($v, 'email') ?>" type="email" autocomplete="email">
-        <?= field_error($errors, 'email') ?>
-      </div>
-      <div class="field full<?= isset($errors['address']) ? ' has-error' : '' ?>">
-        <label for="address">Address</label>
-        <input id="address" name="address" value="<?= old($v, 'address') ?>" maxlength="300" placeholder="Street / P.O. Box, city" autocomplete="street-address">
-        <?= field_error($errors, 'address') ?>
-      </div>
-      <div class="field<?= isset($errors['password']) ? ' has-error' : '' ?>">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="new-password">
-        <div class="hint">At least <?= PASSWORD_MIN_LENGTH ?> characters.</div>
-        <?= field_error($errors, 'password') ?>
-      </div>
-      <div class="field">
-        <label for="password_confirm">Confirm password</label>
-        <input id="password_confirm" name="password_confirm" type="password" autocomplete="new-password">
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-primary" type="submit">Create account</button>
-      <span class="muted small">Already registered? <a href="<?= h(url('login')) ?>">Log in</a></span>
-    </div>
-  </form>
-</div>
-<?php page_footer();
+// Registration is a pop-up on every public page.
+redirect('?modal=mRegister');

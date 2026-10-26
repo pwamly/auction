@@ -10,13 +10,12 @@ declare(strict_types=1);
 
 const REPORTS = [
     'summary'      => ['Auction summary', 'reports.view', 'Every auction closing in the period, with its result.'],
-    'participants' => ['Participants', 'reports.view', 'Participants registered in the period and their activity.'],
+    'participants' => ['Participants report', 'reports.view', 'Participants registered in the period and their activity.'],
     'bids'         => ['Bidding history', 'reports.view', 'Every bid placed in the period.'],
     'winners'      => ['Winners', 'reports.view', 'Winners approved in the period.'],
-    'payments'     => ['Payments', 'reports.view', 'Payment status of every approved winner with a deadline in the period.'],
+    'payments'     => ['Payments report', 'reports.view', 'Payment status of every approved winner with a deadline in the period.'],
     'cancelled'    => ['Cancelled auctions', 'reports.view', 'Auctions cancelled in the period, with the reason.'],
-    'revenue'      => ['Revenue', 'reports.view', 'Payments received, by month.'],
-    'audit'        => ['Audit trail', 'audit.view', 'Every recorded action in the period.'],
+    'audit'        => ['History', 'audit.view', 'Every recorded action in the period: logins, changes, approvals, bids and payments.'],
 ];
 
 /** [fromUtc, toUtc] from local YYYY-MM-DD inputs (either may be null). */
@@ -201,22 +200,6 @@ function build_report(string $type, array $range, string $q, string $extra): arr
                               ['status_reason', 'Reason'], ['opens_at', 'Was opening', 'datetime'], ['closes_at', 'Was closing', 'datetime'], ['bids', 'Bids voided', 'int']],
                 'rows' => $rows,
                 'summary' => [['Cancelled auctions', count($rows)], ['Bids voided', array_sum(array_column($rows, 'bids'))]],
-            ];
-
-        case 'revenue':
-            $where = 'o.status = "paid"' . range_sql('o.paid_at', $range, $params);
-            $rows = db_all(
-                "SELECT DATE_FORMAT(CONVERT_TZ(o.paid_at, '+00:00', '+03:00'), '%Y-%m') AS month, COUNT(*) AS auctions, SUM(o.amount) AS revenue,
-                        SUM(a.starting_price) AS starting_total
-                 FROM winner_offers o JOIN auctions a ON a.id = o.auction_id WHERE $where GROUP BY month ORDER BY month DESC",
-                $params
-            );
-            $outstanding = db_value('SELECT COALESCE(SUM(amount), 0) FROM winner_offers WHERE status = "approved"');
-            $total = array_sum(array_map(static fn($r) => decimal_to_cents($r['revenue']), $rows));
-            return [
-                'columns' => [['month', 'Month'], ['auctions', 'Auctions paid', 'int'], ['revenue', 'Revenue', 'money'], ['starting_total', 'Sum of starting prices', 'money']],
-                'rows' => $rows,
-                'summary' => [['Revenue in period', money(cents_to_decimal($total))], ['Paid auctions', array_sum(array_column($rows, 'auctions'))], ['Outstanding now (approved, unpaid)', money($outstanding)]],
             ];
 
         case 'audit':

@@ -51,7 +51,7 @@ if (is_post()) {
 
 page_header('Two-factor authentication');
 ?>
-<div class="form-card form-narrow">
+<div class="auth-shell"><div class="form-card">
   <h1><?= $enrolling ? 'Set up two-factor authentication' : 'Enter your security code' ?></h1>
   <?php if ($enrolling): ?>
     <p class="muted">Staff accounts need a second step at every login. Install an authenticator app (Google Authenticator, Microsoft Authenticator, or similar), then scan this code:</p>
@@ -60,7 +60,7 @@ page_header('Two-factor authentication');
     </div>
     <p class="small muted">Can't scan? Enter this key in the app manually:<br><span class="code"><?= h(trim(chunk_split($secret, 4, ' '))) ?></span></p>
   <?php else: ?>
-    <p class="muted">Open your authenticator app and enter the 6-digit code for <?= h(APP_ORG . ' ' . APP_NAME) ?>.</p>
+    <p class="muted">Open your authenticator app and enter the 6-digit code for <?= h(APP_NAME) ?>.</p>
   <?php endif; ?>
   <form method="post" novalidate>
     <?= csrf_field() ?>
@@ -69,10 +69,10 @@ page_header('Two-factor authentication');
       <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" autofocus style="font-size:20px;letter-spacing:0.2em">
     </div>
     <?php if ($error): ?><div class="field-error" style="margin-top:8px"><?= h($error) ?></div><?php endif; ?>
-    <div class="form-actions"><button class="btn-primary" type="submit" style="width:100%"><?= $enrolling ? 'Verify and finish setup' : 'Verify' ?></button></div>
+    <div class="form-actions"><button class="btn-primary btn-lg btn-block" type="submit"><?= $enrolling ? 'Verify and finish setup' : 'Verify' ?></button></div>
   </form>
-  <p class="small muted" style="margin-top:16px">Lost your phone? Ask an ICT administrator to reset your two-factor setup.</p>
-</div>
+  <p class="auth-foot">Lost your phone? Ask an ICT administrator to reset your two-factor setup.</p>
+</div></div>
 <?php if ($enrolling): ?>
 <script src="<?= h(url('assets/vendor/qrcode.js')) ?>"></script>
 <script>

@@ -73,7 +73,7 @@ function totp_verify(string $secret, string $code, ?int $lastUsedStep = null): ?
 
 function totp_uri(string $secret, string $accountEmail): string
 {
-    $issuer = APP_ORG . ' ' . APP_NAME;
+    $issuer = APP_NAME;
     return 'otpauth://totp/' . rawurlencode($issuer . ':' . $accountEmail)
         . '?secret=' . $secret . '&issuer=' . rawurlencode($issuer)
         . '&algorithm=SHA1&digits=' . TOTP_DIGITS . '&period=' . TOTP_PERIOD;

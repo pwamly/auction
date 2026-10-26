@@ -14,6 +14,7 @@ const AUDIT_ACTIONS = [
     'participant_unblocked'   => 'Participant approved/unblocked',
     'staff_created'           => 'Staff account created',
     'staff_updated'           => 'Staff account changed',
+    'permissions_changed'     => 'Access privileges changed',
     'auction_created'         => 'Auction creation',
     'auction_updated'         => 'Auction change',
     'auction_submitted'       => 'Auction submitted for approval',

@@ -74,7 +74,7 @@ Legend: ✅ built · 🟡 built with an assumption the client should confirm · 
 | Q | Requirement | Status | How it works |
 |---|---|---|---|
 | 26 | Publish winning price, winner's name, item, number of participants | 🟡 | Public **Results** page. Published once the winner is approved (not at closing, so a rejected bidder is never shown as the winner). **Confirm the timing.** |
-| 27 | Auction summary, participants, bidding history, winners, payments, cancelled auctions, revenue, audit trail | ✅ | Reports tab, each with date filters, search and CSV export. Audit trail limited to Administrator, ICT and Manager. |
+| 27 | Auction summary, participants, bidding history, winners, payments, cancelled auctions, ~~revenue~~, audit trail | ✅ | **2026-10-24: Revenue report removed and "Audit trail" renamed "History" at the developer's request.** Reports tab, each with date filters, search and CSV export. Audit trail limited to Administrator, ICT and Manager. |
 
 ## J. Cancellation & exceptions
 
@@ -98,12 +98,28 @@ Legend: ✅ built · 🟡 built with an assumption the client should confirm · 
 | 33 | Admin side for ICT, PR (and others) | 🟡 | Staff roles: Administrator, Auction Officer, Manager, Investment Unit, ICT, PR. |
 | 34 | Responsibilities per unit (left blank) | ⏳ | **Proposed** permissions (visible under Back office → Staff): <br>• Administrator — everything <br>• Auction Officer — create/edit auctions, reports <br>• Manager — create/edit auctions, approve winners & overdue decisions, reports, audit trail <br>• Investment Unit — approve winners, record payments, reports <br>• ICT — manage staff accounts & 2FA resets, reports, audit trail <br>• PR — reports only <br>**Client to confirm.** Defined in `lib/auth.php` → `PERMISSIONS`. |
 
+## Roles (2026-10-24, developer's decision)
+
+- Staff roles reduced to **Administrator, Auction Officer, Manager** (Investment Unit, ICT and PR removed). Participants are unchanged.
+- The **Administrator grants privileges** to Managers and Auction Officers under Staff accounts → Access privileges: create & edit, approve, extend, suspend/resume, cancel, confirm winners, record payments, overdue-payment decisions, block participants, reports, history. Changes are recorded in the history.
+- Administrators always hold every privilege; managing staff accounts and privileges is administrator-only.
+- Starting privileges — Manager: create, confirm winners, record payments, overdue decisions, reports, history. Auction Officer: create, reports.
+- This supersedes the role proposals in Q19, Q33 and Q34 above.
+
 ## Contradictions in the questionnaire and how they were resolved
 
 1. **Q6 (no verification) vs Q22/Q31 (participant approval/rejection)** — no approval step; administrators can block/reactivate, which is notified and audited.
 2. **Q8 (no deposit) vs Q25 (forfeit deposit)** — no deposit; the option is not shown.
 3. **Q17/Q18 (automatic winner, no evaluation) vs Q19 (approval by three units)** — highest bidder is the automatic *provisional* winner; one approval by any of the three units confirms it.
 4. **Q25 (all four options kept)** — treated as "management decision" with offer-to-next / repeat / more time as the choices.
+
+## Interface decisions (2026-10-24, from the developer's feedback)
+
+- Branding: **NDC Auction** (the "Lotline" name from the mockup is dropped).
+- White background with NDC green and gold accents; left sidebar navigation; long pages split into sub-pages; action forms as pop-ups.
+- Interface simplified for Tanzanian bidders: plain catalogue, a "How to bid" page covering NIDA / TIN / BRELA, GePG and the 48-hour payment rule. No functionality from this tracker was removed.
+- 2026-10-24: primary colour set to NDC green **#026838**; NDC logo taken from `conatins_ndc_logo.png` (cut into `assets/ndc-logo.png`, `ndc-emblem.png`, `ndc-favicon.png`). A higher-resolution / vector logo from NDC would look sharper.
+- **To confirm with NDC:** whether a Kiswahili version is needed.
 
 ## Other open items
 

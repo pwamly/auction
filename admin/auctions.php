@@ -16,6 +16,7 @@ $filters = [
     'draft'                   => ['Drafts & returned', 'a.status IN ("draft","rejected")'],
     'pending_winner_approval' => ['Winner approval', 'a.status = "pending_winner_approval"'],
     'awaiting_payment'        => ['Awaiting payment', 'a.status = "awaiting_payment"'],
+    'payments'                => ['Payments (due & overdue)', 'a.status IN ("awaiting_payment","payment_overdue")'],
     'payment_overdue'         => ['Payment overdue', 'a.status = "payment_overdue"'],
     'suspended'               => ['Suspended', 'a.status = "suspended"'],
     'finished'                => ['Completed / unsold', 'a.status IN ("completed","unsold")'],
@@ -43,11 +44,12 @@ $rows = db_all(
 $hasMore = count($rows) > $limit;
 $rows = array_slice($rows, 0, $limit);
 
-page_header('Auctions', 'admin', 'auctions');
+$sideKey = in_array($status, ['pending_approval', 'live', 'pending_winner_approval', 'payments'], true) ? $status : 'auctions';
+page_header($status !== '' ? $filters[$status][0] : 'Auctions', 'admin', $sideKey);
 ?>
 <div class="page-head">
-  <div><h1>Auctions</h1></div>
-  <?php if (can('auction.create')): ?><a class="btn-primary" href="<?= h(url('admin/auction_edit')) ?>">+ New auction</a><?php endif; ?>
+  <div><h1><?= h($status !== '' ? $filters[$status][0] : 'All auctions') ?></h1><p><?= count($rows) ?><?= $hasMore ? '+' : '' ?> auction<?= count($rows) === 1 ? '' : 's' ?></p></div>
+  <?php if (can('auction.create')): ?><button class="btn-primary" type="button" data-open="mAuctionNew"><?= icon('plus') ?>New auction</button><?php endif; ?>
 </div>
 
 <form class="filters" method="get">
@@ -60,14 +62,14 @@ page_header('Auctions', 'admin', 'auctions');
 </form>
 
 <?php if (!$rows): ?>
-  <div class="empty-state">No auctions found.</div>
+  <?= empty_state('No auctions found.', 'gavel') ?>
 <?php else: ?>
   <div class="table-wrap"><table class="data">
     <thead><tr><th>Reference</th><th>Item</th><th>Status</th><th>Opens</th><th>Closes</th><th class="num">Highest bid</th><th class="num">Bids</th><th>Created by</th></tr></thead>
     <tbody><?php foreach ($rows as $a): ?>
       <tr>
-        <td class="nowrap"><a href="<?= h(url('admin/auction_view?id=' . $a['id'])) ?>"><?= h($a['reference']) ?></a></td>
-        <td class="wide"><?= h($a['title']) ?></td>
+        <td class="nowrap"><?= h($a['reference']) ?></td>
+        <td class="wide"><a href="<?= h(url('admin/auction_view?id=' . $a['id'])) ?>"><?= h($a['title']) ?></a></td>
         <td><?= status_badge($a) ?><br><span class="small muted"><?= h(AUCTION_STATUS_LABELS[$a['status']]) ?></span></td>
         <td class="nowrap"><?= h(fmt_dt($a['opens_at'])) ?></td>
         <td class="nowrap"><?= h(fmt_dt($a['closes_at'])) ?></td>

@@ -15,9 +15,50 @@
     if(h > 0) return h + 'h ' + m + 'm ' + String(sec).padStart(2,'0') + 's';
     return m + 'm ' + String(sec).padStart(2,'0') + 's';
   }
-  function fmtMoney(n){
-    return 'TZS ' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  function fmtNumber(n){ return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+  function fmtMoney(n){ return 'TZS ' + fmtNumber(n); }
+
+  // ---------- Sidebar drawer (small screens) ----------
+  function setSidebar(open){ document.body.classList.toggle('sidebar-open', open); }
+  document.querySelectorAll('[data-sidebar-open]').forEach(function(b){ b.addEventListener('click', function(){ setSidebar(true); }); });
+  document.querySelectorAll('[data-sidebar-close]').forEach(function(b){ b.addEventListener('click', function(){ setSidebar(false); }); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setSidebar(false); });
+
+  // ---------- Landing page top menu (phones) ----------
+  var frontBtn = document.querySelector('[data-front-menu]');
+  if(frontBtn){
+    frontBtn.addEventListener('click', function(){
+      var open = document.getElementById('frontLinks').classList.toggle('open');
+      frontBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
   }
+
+  // ---------- Pop-up forms: <button data-open="dialogId"> opens <dialog id="dialogId"> ----------
+  function openModal(id){
+    var d = document.getElementById(id);
+    if(!d || typeof d.showModal !== 'function') return null;
+    d.showModal();
+    var first = d.querySelector('.modal-body input:not([type=hidden]), .modal-body select, .modal-body textarea, .modal-body button');
+    if(first) first.focus();
+    return d;
+  }
+  document.addEventListener('click', function(e){
+    var opener = e.target.closest('[data-open]');
+    if(opener){ e.preventDefault(); openModal(opener.dataset.open); return; }
+    var closer = e.target.closest('[data-close]');
+    if(closer){ var dlg = closer.closest('dialog'); if(dlg) dlg.close(); return; }
+    // Clicking the dark backdrop closes the dialog.
+    if(e.target.tagName === 'DIALOG' && e.target.classList.contains('modal')) e.target.close();
+  });
+  // Re-open a dialog after a failed server-side validation (?modal=id, or <dialog data-autoopen>).
+  var reopen = new URLSearchParams(location.search).get('modal');
+  if(reopen) openModal(reopen);
+  document.querySelectorAll('dialog[data-autoopen]').forEach(function(d){ openModal(d.id); });
+
+  // ---------- Dismissible messages ----------
+  document.querySelectorAll('[data-dismiss]').forEach(function(btn){
+    btn.addEventListener('click', function(){ btn.closest('.flash').remove(); });
+  });
 
   // ---------- Countdowns: <span data-countdown data-closes="ms" data-opens="ms"> ----------
   function tickCountdowns(){
@@ -29,6 +70,8 @@
       else { text = '<b>Bidding closed</b>'; }
       el.innerHTML = text;
       el.classList.toggle('urgent', urgent);
+      var box = el.closest('.clock');
+      if(box) box.classList.toggle('urgent-box', urgent);
     });
   }
   tickCountdowns();
@@ -60,10 +103,20 @@
     updateConditional();
   }
 
-  // ---------- Confirmation on destructive forms ----------
-  document.querySelectorAll('form[data-confirm]').forEach(function(f){
-    f.addEventListener('submit', function(e){ if(!window.confirm(f.dataset.confirm)) e.preventDefault(); });
-  });
+  // ---------- Money inputs: thousands separators while typing ----------
+  function attachMoneyFormat(input){
+    function format(){
+      var raw = input.value.replace(/[^\d.]/g, '');
+      var parts = raw.split('.');
+      var whole = parts[0].replace(/^0+(?=\d)/, '');
+      var formatted = whole ? Number(whole).toLocaleString('en-US') : '';
+      if(parts.length > 1) formatted += '.' + parts[1].slice(0, 2);
+      input.value = formatted;
+    }
+    input.addEventListener('input', format);
+    if(input.value) format(); // pre-filled values (edit forms)
+  }
+  document.querySelectorAll('[data-money]').forEach(attachMoneyFormat);
 
   // ---------- Live bid panel ----------
   var panel = document.querySelector('[data-bid-panel]');
@@ -72,9 +125,12 @@
   var initialStatus = panel.dataset.phase;
   var $ = function(sel){ return panel.querySelector(sel); };
   var amountInput = $('[name="amount"]');
-  var termsBox = $('[name="accept_terms"]');
   var submitBtn = $('[data-bid-submit]');
   var msg = $('[data-bid-msg]');
+  var dialog = document.getElementById('bidConfirm');
+  var termsWrap = dialog ? dialog.querySelector('[data-terms-wrap]') : null;
+  var termsBox = dialog ? dialog.querySelector('[name="accept_terms"]') : null;
+  var minBid = amountInput ? Number(amountInput.dataset.minValue) : 0;
   var busy = false;
 
   function api(action, payload){
@@ -103,9 +159,12 @@
     setText('[data-current]', fmtMoney(s.currentBid));
     setText('[data-bids]', s.bids);
     setText('[data-bidders]', s.bidders);
-    setText('[data-leader]', s.leader ? s.leader + (s.youLead ? ' (you)' : '') : (s.bids ? '—' : 'No bids yet'));
+    setText('[data-leader]', s.leader ? s.leader + (s.youLead ? ' (you)' : '') : (s.bids ? 'log in to see' : 'no bids yet'));
     setText('[data-min]', fmtMoney(s.minNextBid));
-    if(amountInput){ amountInput.placeholder = fmtMoney(s.minNextBid) + ' or more'; amountInput.min = s.minNextBid; }
+    if(amountInput && s.minNextBid !== minBid){
+      minBid = s.minNextBid;
+      amountInput.placeholder = fmtNumber(minBid);
+    }
     var reserve = $('[data-reserve]');
     if(reserve && s.reserveMet !== null){
       reserve.textContent = s.reserveMet ? 'Reserve price met' : 'Reserve price not yet met';
@@ -115,7 +174,7 @@
     if(cd) cd.dataset.closes = s.closesAt;
     var lead = $('[data-you-lead]');
     if(lead) lead.hidden = !s.youLead;
-    if(termsBox && s.termsAccepted){ var wrap = $('[data-terms-wrap]'); if(wrap) wrap.hidden = true; }
+    if(termsWrap && s.termsAccepted) termsWrap.hidden = true;
   }
 
   function poll(){
@@ -124,27 +183,47 @@
   }
   setInterval(poll, 3000);
 
-  function submitBid(){
-    if(busy) return;
+  if(!submitBtn || !dialog) return;
+  attachMoneyFormat(amountInput);
+
+  function showError(text){ msg.textContent = text; msg.className = 'bid-msg error'; }
+  function amountValue(){ return Number((amountInput.value || '').replace(/,/g, '')); }
+  var dialogError = dialog.querySelector('[data-dialog-error]');
+
+  // Step 1: check the amount, then confirm in a pop-up (with the terms on a first bid).
+  function review(){
     msg.textContent = ''; msg.className = 'bid-msg';
-    var amount = (amountInput.value || '').replace(/,/g, '').trim();
-    if(!amount){ msg.textContent = 'Enter your bid amount.'; msg.className = 'bid-msg error'; return; }
-    var termsWrap = $('[data-terms-wrap]');
-    var needTerms = termsBox && termsWrap && !termsWrap.hidden;
-    if(needTerms && !termsBox.checked){ msg.textContent = 'Please accept the terms and conditions first.'; msg.className = 'bid-msg error'; return; }
-    busy = true; submitBtn.disabled = true;
-    api('bid', { amount: amount, acceptTerms: needTerms ? termsBox.checked : false }).then(function(body){
+    var amount = amountValue();
+    if(!amount){ showError('Enter your bid amount.'); amountInput.focus(); return; }
+    if(amount < minBid){ showError('The minimum bid is ' + fmtMoney(minBid) + '.'); amountInput.focus(); return; }
+    dialog.querySelector('[data-confirm-amount]').textContent = fmtMoney(amount);
+    dialogError.textContent = '';
+    dialog.showModal();
+    dialog.querySelector('[data-bid-confirm]').focus();
+  }
+
+  // Step 2: send it.
+  function send(){
+    if(busy) return;
+    var needTerms = termsWrap && !termsWrap.hidden;
+    if(needTerms && !termsBox.checked){ dialogError.textContent = 'Please accept the terms and conditions to continue.'; return; }
+    busy = true;
+    var confirmBtn = dialog.querySelector('[data-bid-confirm]');
+    confirmBtn.disabled = true;
+    api('bid', { amount: String(amountValue()), acceptTerms: needTerms ? termsBox.checked : false }).then(function(body){
+      dialog.close();
       amountInput.value = '';
-      msg.textContent = body.extendedTo ? 'Bid placed. The auction was extended because of your late bid.' : 'Bid placed — you are the highest bidder.';
+      msg.textContent = body.extendedTo ? '✓ Bid placed. Closing was extended because of your late bid.' : '✓ Bid placed — you are the highest bidder.';
       msg.className = 'bid-msg ok';
       applyState(body.state);
     }).catch(function(err){
-      msg.textContent = err.message; msg.className = 'bid-msg error';
+      dialog.close();
+      showError(err.message);
       if(err.body && err.body.state) applyState(err.body.state);
-    }).then(function(){ busy = false; submitBtn.disabled = false; });
+    }).then(function(){ busy = false; confirmBtn.disabled = false; });
   }
-  if(submitBtn){
-    submitBtn.addEventListener('click', submitBid);
-    amountInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); submitBid(); } });
-  }
+
+  submitBtn.addEventListener('click', review);
+  dialog.querySelector('[data-bid-confirm]').addEventListener('click', send);
+  amountInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); review(); } });
 })();

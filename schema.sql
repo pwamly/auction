@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
   email                VARCHAR(190) NOT NULL,
   password_hash        VARCHAR(255) NOT NULL,
-  role                 ENUM('participant','admin','auction_officer','manager','investment','ict','pr') NOT NULL,
+  role                 ENUM('participant','admin','auction_officer','manager') NOT NULL,
   status               ENUM('active','blocked') NOT NULL DEFAULT 'active',
   status_reason        VARCHAR(500) NULL,
   full_name            VARCHAR(150) NOT NULL,
@@ -214,6 +214,14 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   PRIMARY KEY (id),
   KEY idx_attempts_email (email, created_at),
   KEY idx_attempts_ip (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Access privileges the administrator grants to the Manager and Auction Officer roles.
+-- The administrator role always has every permission and is not stored here.
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role       ENUM('auction_officer','manager') NOT NULL,
+  permission VARCHAR(40) NOT NULL,
+  PRIMARY KEY (role, permission)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS app_state (

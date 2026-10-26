@@ -1,0 +1,19 @@
+From: NDC Online Auction <auctions@example.com>
+To: System Administrator <admin@ndc.local>
+Subject: [NDC Auction] Auction awaiting approval: Friji Bovu
+Date: Sat, 24 Oct 2026 17:48:20 +0300
+Message-ID: <662917ad939b2ce9355fc724@localhost>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dear System Administrator,
+
+AUC-2026-0010 Friji Bovu was submitted by System Administrator and needs approval before it is published.
+
+View: http://localhost/auction/admin/auction_view?id=10
+
+--
+NDC Online Auction
+http://localhost/auction
+This is an automated message.

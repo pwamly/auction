@@ -22,7 +22,7 @@ $extra = get_str('extra', 40);
 $report = build_report($type, report_range($from, $to), $q, $extra);
 
 if (get_str('format') === 'csv') {
-    audit('report_exported', "Exported $title report" . ($from || $to ? " ($from – $to)" : ''), 'report', null);
+    audit('report_exported', "Exported report: $title" . ($from || $to ? " ($from – $to)" : ''), 'report', null);
     send_csv(
         'auction-' . $type . '-' . date('Y-m-d') . '.csv',
         array_map(static fn($c) => $c[1] . (($c[2] ?? '') === 'money' ? ' (' . CURRENCY . ')' : ''), $report['columns']),
@@ -49,17 +49,10 @@ $extraOptions = [
 ][$type] ?? null;
 
 $shown = array_slice($report['rows'], 0, 500);
-page_header($title . ' report', 'admin', 'reports');
+page_header($title, 'admin', 'report_' . $type);
 ?>
-<div class="page-head"><div><h1>Reports</h1><p>All amounts in <?= h(CURRENCY) ?>; times in East Africa Time.</p></div></div>
+<div class="page-head"><div><div class="crumb">Reports</div><h1><?= h($title) ?></h1><p><?= h($description) ?> Amounts in <?= h(CURRENCY) ?>; times in East Africa Time.</p></div></div>
 
-<div class="tabs">
-  <?php foreach (REPORTS as $key => [$label, $perm]): if (!can($perm)) { continue; } ?>
-    <a href="<?= h(url('admin/reports?type=' . $key)) ?>" class="<?= $key === $type ? 'active' : '' ?>"><?= h($label) ?></a>
-  <?php endforeach; ?>
-</div>
-
-<p class="muted"><?= h($description) ?></p>
 <form class="filters" method="get">
   <input type="hidden" name="type" value="<?= h($type) ?>">
   <div class="field"><label for="from">From</label><input id="from" type="date" name="from" value="<?= h($from) ?>"></div>
@@ -69,7 +62,7 @@ page_header($title . ' report', 'admin', 'reports');
       <?php foreach ($extraOptions[1] as $val => $label): ?><option value="<?= h($val) ?>" <?= (string) $val === $extra ? 'selected' : '' ?>><?= h($label) ?></option><?php endforeach; ?>
     </select></div>
   <?php endif; ?>
-  <?php if ($type !== 'revenue'): ?><div class="field grow"><label for="q">Search</label><input id="q" type="search" name="q" value="<?= h($q) ?>"></div><?php endif; ?>
+  <div class="field grow"><label for="q">Search</label><input id="q" type="search" name="q" value="<?= h($q) ?>"></div>
   <button class="btn-secondary">Apply</button>
   <a class="btn-secondary" href="<?= h(url('admin/reports?type=' . $type)) ?>">Reset</a>
   <a class="btn-primary" href="?<?= h(http_build_query(array_merge($_GET, ['type' => $type, 'format' => 'csv']))) ?>">Export CSV</a>
@@ -88,7 +81,7 @@ page_header($title . ' report', 'admin', 'reports');
     <thead><tr><?php foreach ($report['columns'] as $c): ?><th class="<?= in_array($c[2] ?? '', ['money', 'int'], true) ? 'num' : '' ?>"><?= h($c[1]) ?></th><?php endforeach; ?></tr></thead>
     <tbody><?php foreach ($shown as $row): ?>
       <tr><?php foreach ($report['columns'] as $c): $t = $c[2] ?? 'text'; ?>
-        <td class="<?= in_array($t, ['money', 'int'], true) ? 'num' : ($t === 'datetime' ? 'nowrap' : '') ?>"><?= h(format_report_cell($row[$c[0]] ?? null, $t)) ?></td>
+        <td class="<?= in_array($t, ['money', 'int'], true) ? 'num' : ($t === 'datetime' || $c[0] === 'reference' ? 'nowrap' : (in_array($c[0], ['title', 'summary', 'status_reason', 'address'], true) ? 'wide' : (in_array($c[0], ['winner', 'bidder', 'full_name', 'email', 'company_name', 'status', 'user_name', 'action'], true) ? 'mid' : ''))) ?>"><?= h(format_report_cell($row[$c[0]] ?? null, $t)) ?></td>
       <?php endforeach; ?></tr>
     <?php endforeach; ?></tbody>
   </table></div>

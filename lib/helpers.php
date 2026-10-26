@@ -233,3 +233,51 @@ function send_csv(string $filename, array $header, iterable $rows): void
     fclose($out);
     exit;
 }
+
+// ---------------------------------------------------------------- pop-up form round trips
+
+/** Keeps a pop-up form's values and errors for the next page load (after a redirect). */
+function stash_form(string $key, array $values, array $errors): void
+{
+    unset($values['password'], $values['password_confirm'], $values['csrf']);
+    $_SESSION['forms'][$key] = ['values' => $values, 'errors' => $errors];
+}
+
+/** Returns [values, errors] stashed for a form, once. */
+function take_form(string $key): array
+{
+    $form = $_SESSION['forms'][$key] ?? ['values' => [], 'errors' => []];
+    unset($_SESSION['forms'][$key]);
+    return [$form['values'], $form['errors']];
+}
+
+/** A safe "return to" URL inside this site: the posted return_to, else the referring page, else $fallback. */
+function return_url(string $fallback = ''): string
+{
+    $candidates = [(string) ($_POST['return_to'] ?? ''), (string) ($_SERVER['HTTP_REFERER'] ?? '')];
+    foreach ($candidates as $c) {
+        $path = parse_url($c, PHP_URL_PATH);
+        $host = parse_url($c, PHP_URL_HOST);
+        if ($path && str_starts_with($path, APP_BASE . '/') && ($host === null || $host === ($_SERVER['HTTP_HOST'] ?? $host))) {
+            parse_str((string) parse_url($c, PHP_URL_QUERY), $query);
+            unset($query['modal']);
+            return $path . ($query ? '?' . http_build_query($query) : '');
+        }
+    }
+    return url($fallback);
+}
+
+/** Redirects back to the page the pop-up came from and reopens that pop-up. */
+function back_to_modal(string $modalId, string $fallback = ''): void
+{
+    $to = return_url($fallback);
+    header('Location: ' . $to . (str_contains($to, '?') ? '&' : '?') . 'modal=' . rawurlencode($modalId));
+    exit;
+}
+
+/** Hidden field telling a pop-up form where to return. */
+function return_field(): string
+{
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+    return '<input type="hidden" name="return_to" value="' . h(preg_replace('/([?&])modal=[^&]*&?/', '$1', $uri)) . '">';
+}

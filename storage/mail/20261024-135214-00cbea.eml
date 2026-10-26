@@ -1,0 +1,19 @@
+From: NDC Online Auction <auctions@example.com>
+To: System Administrator <admin@ndc.local>
+Subject: [NDC Auction] Repeat auction created: Toyota Land Cruiser GX (2014)
+Date: Sat, 24 Oct 2026 16:52:14 +0300
+Message-ID: <1a7c6831b2d80a4d0b68b080@localhost>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dear System Administrator,
+
+AUC-2026-0002 Toyota Land Cruiser GX (2014) was not sold (No bids received). A new draft auction AUC-2026-0004 has been created with the same details. Review the dates and prices, then submit it for approval.
+
+View: http://localhost/auction/admin/auction_edit?id=4
+
+--
+NDC Online Auction
+http://localhost/auction
+This is an automated message.

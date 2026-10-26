@@ -16,6 +16,7 @@ require_once __DIR__ . '/lib/files.php';
 require_once __DIR__ . '/lib/auctions.php';
 require_once __DIR__ . '/lib/tasks.php';
 require_once __DIR__ . '/lib/layout.php';
+require_once __DIR__ . '/lib/modals.php';
 
 if (PHP_SAPI !== 'cli') {
     start_session();

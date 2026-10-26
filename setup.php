@@ -26,6 +26,24 @@ $schema = preg_replace('/--[^\n]*/', '', file_get_contents(__DIR__ . '/schema.sq
 foreach (array_filter(array_map('trim', explode(';', $schema))) as $sql) {
     db()->exec($sql);
 }
+// Upgrade: only three staff roles remain (admin, auction_officer, manager).
+$removed = (int) db_value("SELECT COUNT(*) FROM users WHERE role IN ('investment','ict','pr')");
+if ($removed > 0) {
+    fwrite(STDERR, "$removed user(s) still have the removed roles investment/ict/pr. Change their role first.\n");
+    exit(1);
+}
+db()->exec("ALTER TABLE users MODIFY role ENUM('participant','admin','auction_officer','manager') NOT NULL");
+
+// Default access privileges (the administrator can change them under Staff accounts).
+if ((int) db_value('SELECT COUNT(*) FROM role_permissions') === 0) {
+    $stmt = db()->prepare('INSERT INTO role_permissions (role, permission) VALUES (?, ?)');
+    foreach (DEFAULT_ROLE_PERMISSIONS as $role => $perms) {
+        foreach ($perms as $perm) {
+            $stmt->execute([$role, $perm]);
+        }
+    }
+    echo "Default access privileges set.\n";
+}
 echo "Tables ready.\n";
 
 foreach (['storage/uploads', 'storage/mail'] as $dir) {

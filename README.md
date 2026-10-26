@@ -1,4 +1,4 @@
-# NDC Online Auction Module ("Lotline")
+# NDC Auction — Online Auction Module
 
 Timed online auctions for NDC assets: public catalogue, participant registration and bidding,
 and a staff back office for approval, winner selection, payment tracking, reports and audit.
@@ -39,20 +39,20 @@ Requirements and every decision taken on them: [docs/REQUIREMENTS_TRACKER.md](do
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LOTLINE_APP_URL` | `http://localhost/auction` | Public URL (used in emails) |
-| `LOTLINE_DB_HOST/PORT/NAME/USER/PASS` | `127.0.0.1` / 3306 / `ndc_auction` / `root` / empty | Database |
-| `LOTLINE_MAIL_TRANSPORT` | `log` | `log` writes emails to `storage/mail/`; `smtp` sends them |
-| `LOTLINE_SMTP_HOST/PORT/SECURE/USER/PASS`, `LOTLINE_MAIL_FROM` | | SMTP server (`SECURE` = `tls`, `ssl` or `none`) |
+| `NDC_AUCTION_APP_URL` | `http://localhost/auction` | Public URL (used in emails) |
+| `NDC_AUCTION_DB_HOST/PORT/NAME/USER/PASS` | `127.0.0.1` / 3306 / `ndc_auction` / `root` / empty | Database |
+| `NDC_AUCTION_MAIL_TRANSPORT` | `log` | `log` writes emails to `storage/mail/`; `smtp` sends them |
+| `NDC_AUCTION_SMTP_HOST/PORT/SECURE/USER/PASS`, `NDC_AUCTION_MAIL_FROM` | | SMTP server (`SECURE` = `tls`, `ssl` or `none`) |
 
 Auction rules (late-bid extension, payment window, default increment, upload limits) are constants in `config.php`.
-Role permissions are in `lib/auth.php` (`PERMISSIONS`).
+Staff roles: Administrator, Auction Officer, Manager. The administrator sets what the other two may do under Staff accounts → Access privileges (stored in `role_permissions`; labels and defaults in `lib/auth.php`).
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
-| `index.php`, `auction.php`, `results.php` | Public catalogue, auction page with live bidding, published results |
-| `register.php`, `login.php`, `two_factor.php`, `account.php`, `notifications.php` | Participant & staff account pages |
+| `index.php`, `auction.php`, `results.php`, `help.php` | Public catalogue, auction page (sub-pages: details, documents, terms, bid history) with live bidding, published results, how-to-bid guide |
+| `register.php`, `login.php`, `two_factor.php`, `account.php`, `notifications.php` | Account pages; `account.php` has sub-pages for bids, wins & payments, profile |
 | `api.php` | JSON for the live bid panel (state + place bid) |
 | `file.php` | Serves photos/documents from `storage/uploads` with access checks |
 | `admin/` | Back office: dashboard, auctions, auction editor & workflow page, participants, staff, reports |
@@ -66,6 +66,12 @@ Role permissions are in `lib/auth.php` (`PERMISSIONS`).
 | `storage/backups/` | The v1 prototype code and its database dump |
 
 The htdocs-level `.htaccess` (shared with the `ndc` app) strips `.php` from URLs, so links in this module are extensionless (`auction?id=3`).
+
+## Interface
+
+- White layout with NDC green and gold; navigation is a left sidebar (a slide-out drawer on phones).
+- Long screens are split into sub-pages (tabs), e.g. the staff auction page: Overview, Bids, Winner & payment, Activity.
+- Every action form (approve, return, suspend, extend, cancel, winner and payment decisions, staff and participant changes, bid confirmation) opens as a pop-up (`<dialog>`), built with `modal_start()` / `modal_end()` in `lib/layout.php` and opened by any button with `data-open="<dialog id>"`.
 
 ## How an auction runs
 
@@ -84,6 +90,6 @@ Every step is in the audit trail and triggers in-app + email notifications.
 
 - Use HTTPS (session cookies become Secure automatically).
 - Use a dedicated database user with a password instead of `root`.
-- Configure SMTP and set `LOTLINE_MAIL_TRANSPORT=smtp`.
+- Configure SMTP and set `NDC_AUCTION_MAIL_TRANSPORT=smtp`.
 - Install the cron job.
 - Integrate GePG (needs NDC's GePG registration and API documents).

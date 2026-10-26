@@ -1,6 +1,6 @@
 <?php
 /**
- * Site configuration. Environment variables (LOTLINE_*) override the defaults,
+ * Site configuration. Environment variables (NDC_AUCTION_*) override the defaults,
  * so production secrets don't have to live in this file.
  */
 
@@ -10,21 +10,21 @@ function env_or(string $name, $default)
     return $value === false || $value === '' ? $default : $value;
 }
 
-define('APP_NAME', env_or('LOTLINE_APP_NAME', 'Lotline'));
-define('APP_ORG', env_or('LOTLINE_APP_ORG', 'NDC'));
+define('APP_NAME', env_or('NDC_AUCTION_APP_NAME', 'NDC Auction'));
+define('APP_ORG', env_or('NDC_AUCTION_APP_ORG', 'NDC'));
 // Public base URL used in emails and QR codes, without a trailing slash.
-define('APP_URL', rtrim(env_or('LOTLINE_APP_URL', 'http://localhost/auction'), '/'));
+define('APP_URL', rtrim(env_or('NDC_AUCTION_APP_URL', 'http://localhost/auction'), '/'));
 // Path prefix for links inside the site.
 define('APP_BASE', rtrim(parse_url(APP_URL, PHP_URL_PATH) ?: '', '/'));
 define('APP_TIMEZONE', 'Africa/Dar_es_Salaam');
 define('CURRENCY', 'TZS');
 
 // ---- Database ----
-define('DB_HOST', env_or('LOTLINE_DB_HOST', '127.0.0.1'));
-define('DB_PORT', (int) env_or('LOTLINE_DB_PORT', 3306));
-define('DB_NAME', env_or('LOTLINE_DB_NAME', 'ndc_auction'));
-define('DB_USER', env_or('LOTLINE_DB_USER', 'root'));
-define('DB_PASS', env_or('LOTLINE_DB_PASS', ''));
+define('DB_HOST', env_or('NDC_AUCTION_DB_HOST', '127.0.0.1'));
+define('DB_PORT', (int) env_or('NDC_AUCTION_DB_PORT', 3306));
+define('DB_NAME', env_or('NDC_AUCTION_DB_NAME', 'ndc_auction'));
+define('DB_USER', env_or('NDC_AUCTION_DB_USER', 'root'));
+define('DB_PASS', env_or('NDC_AUCTION_DB_PASS', ''));
 
 // ---- Auction rules (Requirements_doc.docx section D/E/H) ----
 const DEFAULT_MIN_INCREMENT = 5;          // Q11
@@ -51,16 +51,23 @@ const DOCUMENT_TYPES = [
 // ---- Email (Q21) ----
 // 'log' writes emails to storage/mail/ instead of sending (development).
 // 'smtp' sends through the server below.
-define('MAIL_TRANSPORT', env_or('LOTLINE_MAIL_TRANSPORT', 'log'));
-define('MAIL_FROM', env_or('LOTLINE_MAIL_FROM', 'auctions@example.com'));
-define('MAIL_FROM_NAME', env_or('LOTLINE_MAIL_FROM_NAME', APP_ORG . ' Online Auction'));
-define('SMTP_HOST', env_or('LOTLINE_SMTP_HOST', ''));
-define('SMTP_PORT', (int) env_or('LOTLINE_SMTP_PORT', 587));
-define('SMTP_SECURE', env_or('LOTLINE_SMTP_SECURE', 'tls')); // tls (STARTTLS), ssl, or none
-define('SMTP_USER', env_or('LOTLINE_SMTP_USER', ''));
-define('SMTP_PASS', env_or('LOTLINE_SMTP_PASS', ''));
+define('MAIL_TRANSPORT', env_or('NDC_AUCTION_MAIL_TRANSPORT', 'log'));
+define('MAIL_FROM', env_or('NDC_AUCTION_MAIL_FROM', 'auctions@example.com'));
+define('MAIL_FROM_NAME', env_or('NDC_AUCTION_MAIL_FROM_NAME', APP_ORG . ' Online Auction'));
+define('SMTP_HOST', env_or('NDC_AUCTION_SMTP_HOST', ''));
+define('SMTP_PORT', (int) env_or('NDC_AUCTION_SMTP_PORT', 587));
+define('SMTP_SECURE', env_or('NDC_AUCTION_SMTP_SECURE', 'tls')); // tls (STARTTLS), ssl, or none
+define('SMTP_USER', env_or('NDC_AUCTION_SMTP_USER', ''));
+define('SMTP_PASS', env_or('NDC_AUCTION_SMTP_PASS', ''));
 
 // ---- Security ----
 const PASSWORD_MIN_LENGTH = 8;
 const LOGIN_MAX_FAILURES = 5;      // per email or IP...
 const LOGIN_LOCKOUT_MINUTES = 15;  // ...within this window
+
+// ---- Contact details shown on the landing page ("Contact us") ----
+// Placeholders until NDC supplies the real details.
+define('CONTACT_PHONE', env_or('NDC_AUCTION_CONTACT_PHONE', 'To be confirmed'));
+define('CONTACT_EMAIL', env_or('NDC_AUCTION_CONTACT_EMAIL', 'To be confirmed'));
+define('CONTACT_ADDRESS', env_or('NDC_AUCTION_CONTACT_ADDRESS', 'National Development Corporation, Dar es Salaam'));
+define('CONTACT_HOURS', env_or('NDC_AUCTION_CONTACT_HOURS', 'Monday – Friday, office hours'));

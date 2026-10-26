@@ -760,7 +760,7 @@ function process_overdue_payments(): int
             notify_user((int) $offer['user_id'], 'payment_overdue', 'Payment deadline passed: ' . $a['title'],
                 'The ' . PAYMENT_WINDOW_HOURS . '-hour payment period for ' . auction_label($a) . ' has ended without payment being recorded. '
                 . 'Contact ' . APP_ORG . ' immediately if you have already paid.', 'account');
-            notify_staff('winner.approve', 'payment_overdue', 'Decision needed — payment overdue: ' . $a['title'],
+            notify_staff('payment.decide', 'payment_overdue', 'Decision needed — payment overdue: ' . $a['title'],
                 'The winner of ' . auction_label($a) . ' has not paid within ' . PAYMENT_WINDOW_HOURS . ' hours. '
                 . 'Decide whether to offer it to the next bidder, repeat the auction, or allow more time.', 'admin/auction_view?id=' . $a['id']);
         });

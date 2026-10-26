@@ -1,0 +1,19 @@
+From: NDC Online Auction <auctions@example.com>
+To: UI Test Bidder (Claude) <uitest-bidder@claude.local>
+Subject: [NDC Auction] Auction now open: Friji Bovu
+Date: Sat, 24 Oct 2026 18:00:28 +0300
+Message-ID: <ca89983b33a0f000ebf8ec1f@localhost>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dear UI Test Bidder (Claude),
+
+AUC-2026-0010 Friji Bovu is open for bidding. Starting price TZS 20,000, closes 25 Oct 2026, 17:45.
+
+View: http://localhost/auction/auction?id=10
+
+--
+NDC Online Auction
+http://localhost/auction
+This is an automated message.

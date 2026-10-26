@@ -1,0 +1,19 @@
+From: NDC Online Auction <auctions@example.com>
+To: UI Test Bidder (Claude) <uitest-bidder@claude.local>
+Subject: [NDC Auction] Bid received: [UI test] Generator 250 kVA
+Date: Sat, 24 Oct 2026 17:04:23 +0300
+Message-ID: <067fd79f79735ba2b0d60178@localhost>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dear UI Test Bidder (Claude),
+
+Your bid of TZS 18,500,000 on AUC-2026-0007 [UI test] Generator 250 kVA was received and is currently the highest.
+
+View: http://localhost/auction/auction?id=7
+
+--
+NDC Online Auction
+http://localhost/auction
+This is an automated message.
